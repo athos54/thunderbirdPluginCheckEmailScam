@@ -78,7 +78,6 @@ async function analyzeEmailWithStreaming(rawEmail, config, port) {
         content: `${config.prompt}\n\nEmail a analizar (formato RAW):\n\n${rawEmail}`
       }
     ],
-    max_completion_tokens: 2000,
     stream: true
   };
 
