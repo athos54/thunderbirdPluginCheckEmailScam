@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultado del Análisis - Email Spam Checker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+      color: white;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .content {
+      padding: 32px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .email-preview {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #666;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .analysis-result {
+      background: #fff;
+      border: 2px solid #0078d4;
+      border-radius: 6px;
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.8;
+      word-wrap: break-word;
+      min-height: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    /* Estilos para Markdown */
+    .analysis-result h1 {
+      font-size: 24px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      color: #222;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 8px;
+    }
+
+    .analysis-result h2 {
+      font-size: 20px;
+      margin-top: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .analysis-result h3 {
+      font-size: 17px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      color: #444;
+    }
+
+    .analysis-result p {
+      margin-bottom: 12px;
+    }
+
+    .analysis-result ul,
+    .analysis-result ol {
+      margin-bottom: 12px;
+      padding-left: 24px;
+    }
+
+    .analysis-result li {
+      margin-bottom: 6px;
+    }
+
+    .analysis-result code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #d63384;
+    }
+
+    .analysis-result pre {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin-bottom: 12px;
+    }
+
+    .analysis-result pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .analysis-result blockquote {
+      border-left: 4px solid #0078d4;
+      padding-left: 16px;
+      margin: 12px 0;
+      color: #666;
+      font-style: italic;
+    }
+
+    .analysis-result strong {
+      font-weight: 600;
+      color: #222;
+    }
+
+    .analysis-result em {
+      font-style: italic;
+      color: #555;
+    }
+
+    .analysis-result a {
+      color: #0078d4;
+      text-decoration: none;
+    }
+
+    .analysis-result a:hover {
+      text-decoration: underline;
+    }
+
+    .analysis-result hr {
+      border: none;
+      border-top: 1px solid #e0e0e0;
+      margin: 16px 0;
+    }
+
+    .analysis-result.streaming {
+      position: relative;
+    }
+
+    .analysis-result.streaming::after {
+      content: '▋';
+      animation: blink 1s infinite;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 6px;
+      color: #1976d2;
+      font-size: 14px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #1976d2;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      padding: 16px;
+      background: #ffebee;
+      border: 1px solid #ef9a9a;
+      border-radius: 6px;
+      color: #c62828;
+      font-size: 14px;
+    }
+
+    .metadata {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 16px;
+      font-size: 13px;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .metadata-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .metadata-value {
+      color: #333;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #0078d4;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #005a9e;
+    }
+
+    .btn-secondary {
+      background: #f3f3f3;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <span>🛡️</span>
+        Resultado del Análisis
+      </h1>
+      <button class="close-btn" onclick="window.close()">Cerrar</button>
+    </div>
+
+    <div class="content">
+      <div class="section">
+        <div class="section-title">📊 Información del Email</div>
+        <div class="metadata" id="metadata">
+          <span class="metadata-label">Tamaño:</span>
+          <span class="metadata-value" id="emailSize">-</span>
+          <span class="metadata-label">Modelo:</span>
+          <span class="metadata-value" id="modelUsed">-</span>
+          <span class="metadata-label">Fecha análisis:</span>
+          <span class="metadata-value" id="analysisDate">-</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">📧 Preview del Email (RAW)</div>
+        <div class="email-preview" id="emailPreview">Cargando...</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🤖 Análisis de ChatGPT</div>
+        <div id="loadingIndicator" class="loading">
+          <span class="spinner"></span>
+          Analizando email con ChatGPT...
+        </div>
+        <div id="errorIndicator" class="error" style="display: none;"></div>
+        <div id="analysisResult" class="analysis-result streaming" style="display: none;"></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="copyToClipboard()">📋 Copiar resultado</button>
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
+          <button class="btn btn-secondary" onclick="window.close()">✖️ Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Librería para renderizar Markdown (local) -->
+  <script src="marked.min.js"></script>
+  <script src="result.js"></script>
+</body>
+</html>

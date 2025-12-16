@@ -1,0 +1,26 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos del editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos empaquetados
+*.xpi
+*.zip
+
+# Node modules (si se usa)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos temporales
+.tmp/
+temp/

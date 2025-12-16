@@ -1,0 +1,90 @@
+================================================================
+  EMAIL SPAM CHECKER PARA THUNDERBIRD
+  Análisis forense de phishing con ChatGPT
+================================================================
+
+ARCHIVOS PARA COMPARTIR:
+------------------------
+1. email-spam-checker.xpi  (34 KB) - El plugin
+2. INSTRUCCIONES_INSTALACION.md   - Guía completa paso a paso
+
+
+INSTALACIÓN RÁPIDA:
+-------------------
+1. Abre Thunderbird
+2. Ve a: Menú ☰ → Complementos y temas
+3. Click en el engranaje ⚙️ → "Instalar complemento desde archivo"
+4. Selecciona: email-spam-checker.xpi
+5. Confirma la instalación
+
+
+CONFIGURACIÓN (OBLIGATORIA):
+----------------------------
+Necesitas una API key de OpenAI:
+
+1. Ve a: https://platform.openai.com/api-keys
+2. Crea una cuenta (si no tienes)
+3. Genera una nueva API key
+4. IMPORTANTE: Añade crédito ($5 mínimo) en:
+   https://platform.openai.com/settings/organization/billing
+
+5. En Thunderbird:
+   - Abre un email
+   - Click en el icono del plugin (escudo azul)
+   - Click en "Configuración"
+   - Pega tu API key
+   - Guarda
+
+
+USO:
+----
+1. Abre cualquier email en Thunderbird
+2. Click en el icono del plugin 🛡️
+3. Click en "Analizar este email"
+4. Se abre una ventana con el análisis completo
+
+
+QUÉ ANALIZA:
+------------
+✓ Cabeceras SPF/DKIM/DMARC
+✓ Enlaces (acortadores, typosquatting, punycode)
+✓ Homoglyphs (O/0, l/I, caracteres Unicode)
+✓ Ingeniería social (urgencia, amenazas)
+✓ Búsqueda en internet sobre el dominio
+
+
+COSTE:
+------
+GPT-4o Mini: ~$0.00015 por email (recomendado)
+GPT-4o: ~$0.0025 por email (más preciso)
+
+Con $5 → ~33,000 emails (GPT-4o Mini)
+
+
+SOPORTE:
+--------
+Lee INSTRUCCIONES_INSTALACION.md para:
+- Instalación paso a paso
+- Configuración detallada
+- Solución de problemas
+- Personalización
+
+
+PRIVACIDAD:
+-----------
+- API key se guarda localmente
+- Emails se envían a OpenAI para análisis
+- No se guarda historial
+- Lee: https://openai.com/policies/privacy-policy
+
+
+REQUISITOS:
+-----------
+- Thunderbird 102 o superior
+- Cuenta OpenAI con crédito
+- Conexión a internet
+
+
+================================================================
+Para más información, abre: INSTRUCCIONES_INSTALACION.md
+================================================================
