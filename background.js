@@ -4,7 +4,8 @@
 async function getConfig() {
   const result = await browser.storage.local.get({
     apiKey: '',
-    model: 'gpt-4o-mini',
+    model: 'gpt-4o',
+    translateModel: 'gpt-4o-mini',
     prompt: `Eres un analista senior de ciberseguridad especializado en detección de phishing y fraude por email. Analiza el email RAW completo que te proporciono.
 
 **ANÁLISIS REQUERIDO:**
@@ -45,7 +46,28 @@ async function getConfig() {
 2. Acción concreta 2
 3. Acción concreta 3
 
-**IMPORTANTE:** No inventes datos. Si falta algo, dilo explícitamente ("no se ve DKIM", etc.).`
+**IMPORTANTE:** No inventes datos. Si falta algo, dilo explícitamente ("no se ve DKIM", etc.).`,
+    translatePrompt: `Traduce el siguiente email al español.
+
+**INSTRUCCIONES:**
+- Traduce TODO el contenido del email (asunto, cuerpo, firmas, etc.)
+- Mantén el formato original del email (párrafos, listas, saltos de línea, etc.)
+- Usa formato Markdown en tu respuesta: **negritas**, *cursivas*, listas, etc.
+- Si hay partes técnicas (como cabeceras o código), déjalas sin traducir
+- Preserva los enlaces originales
+- Si el email ya está en español, indícalo y muestra el contenido original
+
+**FORMATO DE RESPUESTA:**
+
+**Idioma original detectado:** [idioma]
+
+---
+
+**Asunto traducido:** [asunto]
+
+**Cuerpo:**
+
+[contenido traducido con formato Markdown]`
   });
   return result;
 }
@@ -60,22 +82,95 @@ async function getRawEmail(messageId) {
   }
 }
 
+// Función para extraer el body del email (texto plano o HTML)
+function extractBody(part) {
+  let textBody = '';
+  let htmlBody = '';
+
+  if (part.body) {
+    const contentType = part.contentType || '';
+    if (contentType.includes('text/plain')) {
+      textBody = part.body;
+    } else if (contentType.includes('text/html')) {
+      htmlBody = part.body;
+    }
+  }
+
+  if (part.parts && part.parts.length > 0) {
+    for (const subPart of part.parts) {
+      const extracted = extractBody(subPart);
+      if (extracted.textBody) textBody = extracted.textBody;
+      if (extracted.htmlBody) htmlBody = extracted.htmlBody;
+    }
+  }
+
+  return { textBody, htmlBody };
+}
+
+// Función para obtener el subject y body del email
+async function getEmailBody(messageId) {
+  try {
+    // Obtener el header del mensaje para el subject
+    const messageHeader = await browser.messages.get(messageId);
+    const subject = messageHeader.subject || '';
+
+    // Obtener el body
+    const fullMessage = await browser.messages.getFull(messageId);
+    const { textBody, htmlBody } = extractBody(fullMessage);
+
+    let body = '';
+    // Preferir texto plano, sino usar HTML
+    if (textBody) {
+      body = textBody;
+    } else if (htmlBody) {
+      // Limpiar HTML básico para obtener solo texto
+      body = htmlBody
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Combinar subject y body
+    return `Asunto: ${subject}\n\n${body}`;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // Función para analizar con streaming desde background
-async function analyzeEmailWithStreaming(rawEmail, config, port) {
+async function analyzeEmailWithStreaming(rawEmail, config, port, action = 'analyze') {
   if (!config.apiKey) {
     throw new Error('No se ha configurado la API key de OpenAI');
   }
 
+  // Seleccionar modelo, prompt y mensaje de sistema según la acción
+  const isTranslate = action === 'translate';
+  const model = isTranslate ? config.translateModel : config.model;
+  const prompt = isTranslate ? config.translatePrompt : config.prompt;
+  const systemMessage = isTranslate
+    ? 'Eres un traductor profesional experto en múltiples idiomas. Tu tarea es traducir emails manteniendo el formato y el contexto original.'
+    : 'Eres un analista senior de ciberseguridad especializado en detección de phishing y fraude por email. Tienes capacidad de búsqueda en internet para verificar dominios y reportes de fraude. Debes analizar emails en formato RAW completo (cabeceras + MIME + contenido) y proporcionar análisis forense detallado.';
+  const userContent = isTranslate
+    ? `${prompt}\n\nEmail a traducir:\n\n${rawEmail}`
+    : `${prompt}\n\nEmail a analizar (formato RAW):\n\n${rawEmail}`;
+
   const requestBody = {
-    model: config.model,
+    model: model,
     messages: [
       {
         role: 'system',
-        content: 'Eres un analista senior de ciberseguridad especializado en detección de phishing y fraude por email. Tienes capacidad de búsqueda en internet para verificar dominios y reportes de fraude. Debes analizar emails en formato RAW completo (cabeceras + MIME + contenido) y proporcionar análisis forense detallado.'
+        content: systemMessage
       },
       {
         role: 'user',
-        content: `${config.prompt}\n\nEmail a analizar (formato RAW):\n\n${rawEmail}`
+        content: userContent
       }
     ],
     stream: true
@@ -184,6 +279,13 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     } catch (error) {
       return Promise.resolve({ success: false, error: error.message });
     }
+  } else if (message.action === 'getEmailBody') {
+    try {
+      const body = await getEmailBody(message.messageId);
+      return Promise.resolve({ success: true, body });
+    } catch (error) {
+      return Promise.resolve({ success: false, error: error.message });
+    }
   } else if (message.action === 'getConfig') {
     try {
       const config = await getConfig();
@@ -209,8 +311,20 @@ browser.runtime.onConnect.addListener((port) => {
       if (msg.action === 'startAnalysis') {
         try {
           const config = await getConfig();
-          const rawEmail = await getRawEmail(msg.messageId);
-          await analyzeEmailWithStreaming(rawEmail, config, port);
+          const analysisType = msg.analysisType || 'analyze';
+
+          // Para traducción usar solo el body, para análisis usar el email RAW completo
+          let emailContent;
+          if (analysisType === 'translate') {
+            emailContent = await getEmailBody(msg.messageId);
+            if (!emailContent) {
+              throw new Error('No se pudo extraer el contenido del email');
+            }
+          } else {
+            emailContent = await getRawEmail(msg.messageId);
+          }
+
+          await analyzeEmailWithStreaming(emailContent, config, port, analysisType);
         } catch (error) {
           port.postMessage({ type: 'error', error: error.message });
         }

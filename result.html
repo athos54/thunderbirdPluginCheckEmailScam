@@ -311,8 +311,8 @@
   <div class="container">
     <div class="header">
       <h1>
-        <span>🛡️</span>
-        Resultado del Análisis
+        <span id="headerIcon">🛡️</span>
+        <span id="pageTitle">Resultado del Análisis</span>
       </h1>
       <button class="close-btn" onclick="window.close()">Cerrar</button>
     </div>
@@ -330,16 +330,16 @@
         </div>
       </div>
 
-      <div class="section">
+      <div class="section" id="previewSection">
         <div class="section-title">📧 Preview del Email (RAW)</div>
         <div class="email-preview" id="emailPreview">Cargando...</div>
       </div>
 
       <div class="section">
-        <div class="section-title">🤖 Análisis de ChatGPT</div>
+        <div class="section-title" id="resultSectionTitle">🤖 Análisis de ChatGPT</div>
         <div id="loadingIndicator" class="loading">
           <span class="spinner"></span>
-          Analizando email con ChatGPT...
+          <span id="loadingText">Analizando email con ChatGPT...</span>
         </div>
         <div id="errorIndicator" class="error" style="display: none;"></div>
         <div id="analysisResult" class="analysis-result streaming" style="display: none;"></div>

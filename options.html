@@ -125,31 +125,49 @@
     }
 
     .status-message {
-      padding: 12px 16px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-      font-size: 14px;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
       display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
     .status-message.success {
-      background: #e8f5e9;
-      color: #2e7d32;
-      border: 1px solid #a5d6a7;
+      background: #2e7d32;
+      color: white;
+      border: none;
       display: block;
     }
 
     .status-message.error {
-      background: #ffebee;
-      color: #c62828;
-      border: 1px solid #ef9a9a;
+      background: #c62828;
+      color: white;
+      border: none;
       display: block;
     }
 
     .status-message.info {
-      background: #e3f2fd;
-      color: #1976d2;
-      border: 1px solid #90caf9;
+      background: #1976d2;
+      color: white;
+      border: none;
       display: block;
     }
 
@@ -212,10 +230,23 @@
       </div>
 
       <div class="form-group">
-        <label for="model">Modelo de ChatGPT</label>
+        <label for="model">Modelo para análisis</label>
         <select id="model" name="model">
           <option value="gpt-4o-mini">GPT-4o Mini (Rápido y económico)</option>
           <option value="gpt-4o">GPT-4o (Recomendado)</option>
+          <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+        </select>
+        <div class="models-info">
+          <strong>Recomendación:</strong> GPT-4o ofrece el mejor análisis forense profundo con búsqueda en internet.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="translateModel">Modelo para traducción</label>
+        <select id="translateModel" name="translateModel">
+          <option value="gpt-4o-mini">GPT-4o Mini (Rápido y económico)</option>
+          <option value="gpt-4o">GPT-4o</option>
           <option value="gpt-4-turbo">GPT-4 Turbo</option>
           <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
         </select>
@@ -223,19 +254,31 @@
           Actualizar lista de modelos
         </button>
         <div class="models-info">
-          <strong>Recomendación:</strong> GPT-4o ofrece el mejor análisis forense profundo con búsqueda en internet. GPT-4o Mini es más rápido y económico para análisis básicos.
+          <strong>Recomendación:</strong> GPT-4o Mini es suficiente para traducciones y más económico.
         </div>
       </div>
 
       <div class="form-group">
-        <label for="prompt">Prompt personalizado</label>
+        <label for="prompt">Prompt de análisis</label>
         <textarea
           id="prompt"
           name="prompt"
-          placeholder="Escribe el prompt que se enviará a ChatGPT..."
+          placeholder="Escribe el prompt que se enviará a ChatGPT para analizar..."
         ></textarea>
         <p class="help-text">
-          Instrucciones detalladas para el análisis de phishing. Este prompt profesional analiza cabeceras, enlaces, homoglyphs, ingeniería social y busca información del dominio en internet. Puedes personalizarlo según tus necesidades.
+          Instrucciones detalladas para el análisis de phishing. Este prompt profesional analiza cabeceras, enlaces, homoglyphs, ingeniería social y busca información del dominio en internet.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="translatePrompt">Prompt de traducción</label>
+        <textarea
+          id="translatePrompt"
+          name="translatePrompt"
+          placeholder="Escribe el prompt que se enviará a ChatGPT para traducir..."
+        ></textarea>
+        <p class="help-text">
+          Instrucciones para la traducción del email. Por defecto traduce al español manteniendo el formato original.
         </p>
       </div>
 

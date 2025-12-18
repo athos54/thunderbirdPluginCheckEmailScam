@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
   const analyzeBtn = document.getElementById('analyzeBtn');
+  const translateBtn = document.getElementById('translateBtn');
   const statusDiv = document.getElementById('status');
   const resultDiv = document.getElementById('result');
   const configLink = document.getElementById('configLink');
@@ -85,10 +86,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Analizar email
-  analyzeBtn.addEventListener('click', async () => {
+  // Función para abrir ventana de resultados con una acción específica
+  async function openResultWindow(action) {
     try {
       analyzeBtn.disabled = true;
+      translateBtn.disabled = true;
       showStatus('<span class="spinner"></span> Obteniendo email...', 'loading');
 
       // Obtener el mensaje actual
@@ -104,8 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const message = messageList.messages[0];
 
-      // Abrir la página de resultados en una nueva ventana
-      const resultUrl = browser.runtime.getURL(`result.html?messageId=${message.id}`);
+      // Abrir la página de resultados en una nueva ventana con la acción
+      const resultUrl = browser.runtime.getURL(`result.html?messageId=${message.id}&action=${action}`);
 
       await browser.windows.create({
         url: resultUrl,
@@ -120,13 +122,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
       showStatus(`❌ Error: ${error.message}`, 'error');
       analyzeBtn.disabled = false;
+      translateBtn.disabled = false;
     }
-  });
+  }
+
+  // Analizar email
+  analyzeBtn.addEventListener('click', () => openResultWindow('analyze'));
+
+  // Traducir email
+  translateBtn.addEventListener('click', () => openResultWindow('translate'));
 
   // Verificar configuración al cargar
   const config = await browser.storage.local.get('apiKey');
   if (!config.apiKey) {
     showStatus('⚠️ Configura tu API key de OpenAI primero', 'error');
     analyzeBtn.disabled = true;
+    translateBtn.disabled = true;
   }
 });
