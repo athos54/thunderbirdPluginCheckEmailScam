@@ -185,6 +185,28 @@ Los costes exactos dependen del tamaño del email. Consulta los [precios actuale
 - Verifica que Thunderbird sea versión 102 o superior
 - Reinstala el plugin siguiendo las instrucciones de instalación
 
+### La extensión temporal desaparece al cerrar Thunderbird
+Este es el comportamiento normal - las extensiones temporales se eliminan automáticamente al cerrar Thunderbird. Tienes varias opciones:
+
+**Opción A: Recargar manualmente (desarrollo rápido)**
+- Cada vez que abras Thunderbird: Menu → Complementos → Depurar complementos → Cargar complemento temporal
+
+**Opción B: Instalar permanentemente sin firma (recomendado para desarrollo)**
+1. Abre `about:config` en Thunderbird (Menu → Settings → Config Editor)
+2. Busca y modifica estas preferencias:
+   - `xpinstall.signatures.required` → `false`
+   - `extensions.experiments.enabled` → `true`
+3. Empaqueta la extensión: `./package.sh`
+4. Instala el XPI: Menu → Complementos → Instalar complemento desde archivo
+5. Ahora persistirá entre reinicios (solo reinstala cuando hagas cambios)
+
+**Opción C: Usar web-ext (desarrollo avanzado)**
+```bash
+npm install -g web-ext
+web-ext run --target=thunderbird-desktop --start-url about:debugging
+```
+Recarga automáticamente la extensión cuando detecta cambios
+
 ## Desarrollo
 
 ### Requisitos para desarrollo
