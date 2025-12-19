@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Email Spam Checker",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Analiza emails con ChatGPT para detectar spam",
   "author": "Tu nombre",
   "applications": {
