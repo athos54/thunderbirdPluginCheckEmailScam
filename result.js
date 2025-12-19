@@ -17,10 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Obtener parámetros de la URL
   const params = new URLSearchParams(window.location.search);
   const messageId = params.get('messageId');
+  const composeTabId = params.get('composeTabId');
   currentAction = params.get('action') || 'analyze';
 
   // Actualizar títulos según la acción
   const isTranslate = currentAction === 'translate';
+  const isCompose = composeTabId !== null;
+
   document.getElementById('pageTitle').textContent = isTranslate ? 'Traducción del Email' : 'Resultado del Análisis';
   document.getElementById('headerIcon').textContent = isTranslate ? '🌐' : '🛡️';
   document.getElementById('resultSectionTitle').textContent = isTranslate ? '🌐 Traducción de ChatGPT' : '🤖 Análisis de ChatGPT';
@@ -32,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('previewSection').style.display = 'none';
   }
 
-  if (!messageId) {
+  if (!messageId && !composeTabId) {
     showError('No se especificó un mensaje para ' + (isTranslate ? 'traducir' : 'analizar'));
     return;
   }
@@ -51,24 +54,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Obtener email (RAW para análisis, body para traducción)
     let emailContent;
-    if (isTranslate) {
-      const bodyResponse = await browser.runtime.sendMessage({
-        action: 'getEmailBody',
-        messageId: parseInt(messageId)
-      });
-      if (!bodyResponse.success) {
-        throw new Error('Error obteniendo email: ' + bodyResponse.error);
+    if (isCompose) {
+      // Estamos analizando un email en composición
+      if (isTranslate) {
+        const bodyResponse = await browser.runtime.sendMessage({
+          action: 'getComposeBody',
+          composeTabId: parseInt(composeTabId)
+        });
+        if (!bodyResponse.success) {
+          throw new Error('Error obteniendo email: ' + bodyResponse.error);
+        }
+        emailContent = bodyResponse.body;
+      } else {
+        const emailResponse = await browser.runtime.sendMessage({
+          action: 'getComposeRaw',
+          composeTabId: parseInt(composeTabId)
+        });
+        if (!emailResponse.success) {
+          throw new Error('Error obteniendo email: ' + emailResponse.error);
+        }
+        emailContent = emailResponse.rawEmail;
       }
-      emailContent = bodyResponse.body;
     } else {
-      const emailResponse = await browser.runtime.sendMessage({
-        action: 'getEmailRaw',
-        messageId: parseInt(messageId)
-      });
-      if (!emailResponse.success) {
-        throw new Error('Error obteniendo email: ' + emailResponse.error);
+      // Estamos analizando un email recibido
+      if (isTranslate) {
+        const bodyResponse = await browser.runtime.sendMessage({
+          action: 'getEmailBody',
+          messageId: parseInt(messageId)
+        });
+        if (!bodyResponse.success) {
+          throw new Error('Error obteniendo email: ' + bodyResponse.error);
+        }
+        emailContent = bodyResponse.body;
+      } else {
+        const emailResponse = await browser.runtime.sendMessage({
+          action: 'getEmailRaw',
+          messageId: parseInt(messageId)
+        });
+        if (!emailResponse.success) {
+          throw new Error('Error obteniendo email: ' + emailResponse.error);
+        }
+        emailContent = emailResponse.rawEmail;
       }
-      emailContent = emailResponse.rawEmail;
     }
 
     // Mostrar metadata
@@ -80,7 +107,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     showEmailPreview(emailContent);
 
     // Iniciar análisis/traducción con streaming
-    await analyzeWithStreaming(parseInt(messageId));
+    if (isCompose) {
+      await analyzeWithStreaming(null, parseInt(composeTabId));
+    } else {
+      await analyzeWithStreaming(parseInt(messageId), null);
+    }
 
   } catch (error) {
     showError(error.message);
@@ -135,7 +166,7 @@ function finishAnalysis() {
 
 }
 
-async function analyzeWithStreaming(messageId) {
+async function analyzeWithStreaming(messageId, composeTabId) {
 
   return new Promise((resolve, reject) => {
     // Crear puerto de comunicación con background
@@ -159,11 +190,19 @@ async function analyzeWithStreaming(messageId) {
     });
 
     // Iniciar el análisis/traducción
-    port.postMessage({
+    const message = {
       action: 'startAnalysis',
-      messageId: messageId,
       analysisType: currentAction
-    });
+    };
+
+    // Añadir el parámetro correcto según el contexto
+    if (composeTabId !== null) {
+      message.composeTabId = composeTabId;
+    } else {
+      message.messageId = messageId;
+    }
+
+    port.postMessage(message);
   });
 }
 

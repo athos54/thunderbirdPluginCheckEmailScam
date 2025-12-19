@@ -144,6 +144,86 @@ async function getEmailBody(messageId) {
   }
 }
 
+// Función para obtener el contenido de un email en composición
+async function getComposeContent(tabId) {
+  try {
+    const details = await browser.compose.getComposeDetails(tabId);
+
+    let content = '';
+
+    // Añadir destinatarios
+    if (details.to && details.to.length > 0) {
+      content += `Para: ${details.to.join(', ')}\n`;
+    }
+    if (details.cc && details.cc.length > 0) {
+      content += `CC: ${details.cc.join(', ')}\n`;
+    }
+    if (details.bcc && details.bcc.length > 0) {
+      content += `BCC: ${details.bcc.join(', ')}\n`;
+    }
+
+    // Añadir asunto
+    content += `Asunto: ${details.subject || '(sin asunto)'}\n\n`;
+
+    // Añadir cuerpo (preferir texto plano, luego HTML)
+    if (details.plainTextBody) {
+      content += details.plainTextBody;
+    } else if (details.body) {
+      // Si solo hay HTML, limpiar las etiquetas
+      const cleanBody = details.body
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim();
+      content += cleanBody;
+    }
+
+    return content;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Función para obtener el email en formato "RAW" desde compose
+// (simulado, ya que compose no tiene formato RAW real)
+async function getComposeAsRaw(tabId) {
+  try {
+    const details = await browser.compose.getComposeDetails(tabId);
+
+    let raw = '';
+
+    // Simular cabeceras básicas
+    if (details.to && details.to.length > 0) {
+      raw += `To: ${details.to.join(', ')}\n`;
+    }
+    if (details.cc && details.cc.length > 0) {
+      raw += `Cc: ${details.cc.join(', ')}\n`;
+    }
+    if (details.bcc && details.bcc.length > 0) {
+      raw += `Bcc: ${details.bcc.join(', ')}\n`;
+    }
+    raw += `Subject: ${details.subject || '(sin asunto)'}\n`;
+    raw += `Content-Type: text/plain; charset=UTF-8\n\n`;
+
+    // Añadir cuerpo
+    if (details.plainTextBody) {
+      raw += details.plainTextBody;
+    } else if (details.body) {
+      raw += details.body;
+    }
+
+    return raw;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // Función para analizar con streaming desde background
 async function analyzeEmailWithStreaming(rawEmail, config, port, action = 'analyze') {
   if (!config.apiKey) {
@@ -286,6 +366,20 @@ browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     } catch (error) {
       return Promise.resolve({ success: false, error: error.message });
     }
+  } else if (message.action === 'getComposeRaw') {
+    try {
+      const rawEmail = await getComposeAsRaw(message.composeTabId);
+      return Promise.resolve({ success: true, rawEmail });
+    } catch (error) {
+      return Promise.resolve({ success: false, error: error.message });
+    }
+  } else if (message.action === 'getComposeBody') {
+    try {
+      const body = await getComposeContent(message.composeTabId);
+      return Promise.resolve({ success: true, body });
+    } catch (error) {
+      return Promise.resolve({ success: false, error: error.message });
+    }
   } else if (message.action === 'getConfig') {
     try {
       const config = await getConfig();
@@ -313,15 +407,31 @@ browser.runtime.onConnect.addListener((port) => {
           const config = await getConfig();
           const analysisType = msg.analysisType || 'analyze';
 
+          // Determinar si estamos trabajando con un mensaje o con un compose
+          const isCompose = msg.composeTabId !== undefined;
+
           // Para traducción usar solo el body, para análisis usar el email RAW completo
           let emailContent;
-          if (analysisType === 'translate') {
-            emailContent = await getEmailBody(msg.messageId);
-            if (!emailContent) {
-              throw new Error('No se pudo extraer el contenido del email');
+          if (isCompose) {
+            // Estamos analizando un email en composición
+            if (analysisType === 'translate') {
+              emailContent = await getComposeContent(msg.composeTabId);
+              if (!emailContent) {
+                throw new Error('No se pudo extraer el contenido del email en composición');
+              }
+            } else {
+              emailContent = await getComposeAsRaw(msg.composeTabId);
             }
           } else {
-            emailContent = await getRawEmail(msg.messageId);
+            // Estamos analizando un mensaje existente
+            if (analysisType === 'translate') {
+              emailContent = await getEmailBody(msg.messageId);
+              if (!emailContent) {
+                throw new Error('No se pudo extraer el contenido del email');
+              }
+            } else {
+              emailContent = await getRawEmail(msg.messageId);
+            }
           }
 
           await analyzeEmailWithStreaming(emailContent, config, port, analysisType);

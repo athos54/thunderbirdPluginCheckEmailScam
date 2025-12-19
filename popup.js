@@ -93,22 +93,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       translateBtn.disabled = true;
       showStatus('<span class="spinner"></span> Obteniendo email...', 'loading');
 
-      // Obtener el mensaje actual
-      const tabs = await browser.mailTabs.query({ active: true, currentWindow: true });
-      if (!tabs || tabs.length === 0) {
-        throw new Error('No se encontró una pestaña de correo activa');
+      let resultUrl;
+
+      // Intentar obtener el tab de compose primero
+      const allTabs = await browser.tabs.query({ active: true, currentWindow: true });
+
+      // Detectar si estamos en una ventana de compose
+      let composeTab = null;
+      for (const tab of allTabs) {
+        try {
+          // Intentar obtener detalles de compose - si funciona, estamos en compose
+          await browser.compose.getComposeDetails(tab.id);
+          composeTab = tab;
+          break;
+        } catch (e) {
+          // No es un tab de compose, continuar
+        }
       }
 
-      const messageList = await browser.mailTabs.getSelectedMessages(tabs[0].id);
-      if (!messageList || !messageList.messages || messageList.messages.length === 0) {
-        throw new Error('No hay ningún email seleccionado');
-      }
+      if (composeTab) {
+        // Estamos en una ventana de compose
+        resultUrl = browser.runtime.getURL(`result.html?composeTabId=${composeTab.id}&action=${action}`);
+      } else {
+        // Estamos en una ventana de visualización de email
+        const tabs = await browser.mailTabs.query({ active: true, currentWindow: true });
+        if (!tabs || tabs.length === 0) {
+          throw new Error('No se encontró una pestaña de correo activa');
+        }
 
-      const message = messageList.messages[0];
+        const messageList = await browser.mailTabs.getSelectedMessages(tabs[0].id);
+        if (!messageList || !messageList.messages || messageList.messages.length === 0) {
+          throw new Error('No hay ningún email seleccionado');
+        }
+
+        const message = messageList.messages[0];
+        resultUrl = browser.runtime.getURL(`result.html?messageId=${message.id}&action=${action}`);
+      }
 
       // Abrir la página de resultados en una nueva ventana con la acción
-      const resultUrl = browser.runtime.getURL(`result.html?messageId=${message.id}&action=${action}`);
-
       await browser.windows.create({
         url: resultUrl,
         type: 'popup',
