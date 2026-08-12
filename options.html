@@ -234,11 +234,11 @@
         <select id="model" name="model">
           <option value="gpt-4o-mini">GPT-4o Mini (Rápido y económico)</option>
           <option value="gpt-4o">GPT-4o (Recomendado)</option>
-          <option value="gpt-4-turbo">GPT-4 Turbo</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="gpt-4.1">GPT-4.1</option>
+          <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
         </select>
         <div class="models-info">
-          <strong>Recomendación:</strong> GPT-4o ofrece el mejor análisis forense profundo con búsqueda en internet.
+          <strong>Recomendación:</strong> GPT-4o ofrece un buen equilibrio para el análisis forense. La extensión no realiza consultas externas.
         </div>
       </div>
 
@@ -247,11 +247,11 @@
         <select id="translateModel" name="translateModel">
           <option value="gpt-4o-mini">GPT-4o Mini (Rápido y económico)</option>
           <option value="gpt-4o">GPT-4o</option>
-          <option value="gpt-4-turbo">GPT-4 Turbo</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+          <option value="gpt-4.1">GPT-4.1</option>
         </select>
         <button type="button" id="refreshModels" class="btn-secondary" style="margin-top: 8px; width: auto; padding: 8px 16px; font-size: 13px;">
-          Actualizar lista de modelos
+          Actualizar modelos de ambos selectores
         </button>
         <div class="models-info">
           <strong>Recomendación:</strong> GPT-4o Mini es suficiente para traducciones y más económico.
@@ -266,7 +266,7 @@
           placeholder="Escribe el prompt que se enviará a ChatGPT para analizar..."
         ></textarea>
         <p class="help-text">
-          Instrucciones detalladas para el análisis de phishing. Este prompt profesional analiza cabeceras, enlaces, homoglyphs, ingeniería social y busca información del dominio en internet.
+          Instrucciones detalladas para analizar cabeceras, enlaces, homoglyphs e ingeniería social usando la evidencia contenida en el propio email.
         </p>
       </div>
 

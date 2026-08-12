@@ -50,7 +50,7 @@ QUÉ ANALIZA:
 ✓ Enlaces (acortadores, typosquatting, punycode)
 ✓ Homoglyphs (O/0, l/I, caracteres Unicode)
 ✓ Ingeniería social (urgencia, amenazas)
-✓ Búsqueda en internet sobre el dominio
+✓ Evaluación del dominio basada en las evidencias del email
 
 
 COSTE:

@@ -116,7 +116,7 @@ El análisis forense profesional incluye:
 - Amenazas
 - Petición de credenciales/datos
 
-✅ **Búsqueda en internet**
+✅ **Evaluación del dominio basada en evidencias del email**
 - Reportes de fraude del dominio
 - Quejas online
 

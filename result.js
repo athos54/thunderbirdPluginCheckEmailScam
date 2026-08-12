@@ -99,12 +99,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Mostrar metadata
-    document.getElementById('emailSize').textContent = formatBytes(emailContent.length);
+    document.getElementById('emailSize').textContent = formatBytes(new TextEncoder().encode(emailContent).length);
     document.getElementById('modelUsed').textContent = isTranslate ? config.translateModel : config.model;
     document.getElementById('analysisDate').textContent = new Date().toLocaleString('es-ES');
 
     // Mostrar preview del email
-    showEmailPreview(emailContent);
+    if (!isTranslate) {
+      showEmailPreview(emailContent);
+    }
 
     // Iniciar análisis/traducción con streaming
     if (isCompose) {
@@ -119,8 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function showEmailPreview(rawEmail) {
-  // No truncar, mostrar todo el email (el scroll se encarga del overflow)
-  document.getElementById('emailPreview').textContent = rawEmail;
+  const maxPreviewChars = 200000;
+  document.getElementById('emailPreview').textContent = rawEmail.length > maxPreviewChars
+    ? `${rawEmail.slice(0, maxPreviewChars)}\n\n[... preview truncada por tamaño ...]`
+    : rawEmail;
 }
 
 function showError(message) {
@@ -134,6 +138,54 @@ function showError(message) {
   errorIndicator.textContent = '❌ Error: ' + message;
 }
 
+function renderSafeMarkdown(markdown) {
+  const template = document.createElement('template');
+  template.innerHTML = marked.parse(markdown);
+  const allowedTags = new Set([
+    'P', 'BR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'STRONG', 'EM',
+    'UL', 'OL', 'LI', 'CODE', 'PRE', 'BLOCKQUOTE', 'A', 'HR', 'DEL',
+    'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
+  ]);
+
+  template.content.querySelectorAll('script, style, iframe, object, embed, form, input, button, meta, link, base, img').forEach(element => {
+    element.remove();
+  });
+
+  template.content.querySelectorAll('*').forEach(element => {
+    if (!allowedTags.has(element.tagName)) {
+      element.replaceWith(document.createTextNode(element.textContent || ''));
+      return;
+    }
+
+    for (const attribute of Array.from(element.attributes)) {
+      if (element.tagName !== 'A' || !['href', 'title'].includes(attribute.name.toLowerCase())) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+
+    if (element.tagName === 'A') {
+      const href = element.getAttribute('href') || '';
+      if (!/^(https?:|mailto:)/i.test(href)) {
+        element.removeAttribute('href');
+      } else {
+        element.setAttribute('target', '_blank');
+        element.setAttribute('rel', 'noopener noreferrer');
+      }
+    }
+  });
+
+  return template.content.cloneNode(true);
+}
+
+function updateRenderedResult() {
+  const analysisResult = document.getElementById('analysisResult');
+  try {
+    analysisResult.replaceChildren(renderSafeMarkdown(analysisText));
+  } catch (error) {
+    analysisResult.textContent = analysisText;
+  }
+}
+
 function showAnalysisChunk(chunk) {
   const loadingIndicator = document.getElementById('loadingIndicator');
   const analysisResult = document.getElementById('analysisResult');
@@ -144,13 +196,7 @@ function showAnalysisChunk(chunk) {
   analysisText += chunk;
 
   // Renderizar markdown en tiempo real
-  try {
-    const htmlContent = marked.parse(analysisText);
-    analysisResult.innerHTML = htmlContent;
-  } catch (error) {
-    // Si hay error parseando markdown, mostrar como texto plano
-    analysisResult.textContent = analysisText;
-  }
+  updateRenderedResult();
 }
 
 function finishAnalysis() {
@@ -158,11 +204,7 @@ function finishAnalysis() {
   analysisResult.classList.remove('streaming');
 
   // Renderizar el markdown final una vez más para asegurar
-  try {
-    const htmlContent = marked.parse(analysisText);
-    analysisResult.innerHTML = htmlContent;
-  } catch (error) {
-  }
+  updateRenderedResult();
 
 }
 
@@ -173,6 +215,8 @@ async function analyzeWithStreaming(messageId, composeTabId) {
     const port = browser.runtime.connect({ name: 'streaming' });
 
     // Listener para mensajes del background
+    let settled = false;
+
     port.onMessage.addListener((msg) => {
 
       if (msg.type === 'chunk') {
@@ -180,12 +224,23 @@ async function analyzeWithStreaming(messageId, composeTabId) {
         showAnalysisChunk(msg.content);
       } else if (msg.type === 'done') {
         finishAnalysis();
+        settled = true;
         port.disconnect();
         resolve();
       } else if (msg.type === 'error') {
         showError(msg.error);
+        settled = true;
         port.disconnect();
         reject(new Error(msg.error));
+      }
+    });
+
+    port.onDisconnect.addListener(() => {
+      if (!settled) {
+        settled = true;
+        const message = browser.runtime.lastError?.message || 'La conexión con el proceso de análisis se cerró inesperadamente';
+        showError(message);
+        reject(new Error(message));
       }
     });
 
@@ -214,7 +269,7 @@ function formatBytes(bytes) {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
-function copyToClipboard() {
+function copyToClipboard(event) {
   if (!analysisText) {
     alert('No hay contenido para copiar');
     return;

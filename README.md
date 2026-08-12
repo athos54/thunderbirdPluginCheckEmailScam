@@ -6,13 +6,15 @@ Plugin de Thunderbird que utiliza ChatGPT para analizar emails y detectar spam, 
 
 - 🛡️ **Análisis forense profesional**: Analiza cabeceras SPF/DKIM/DMARC, cadenas Received, y autenticación
 - 🔗 **Auditoría de enlaces**: Detecta acortadores, typosquatting, punycode, redirecciones y homoglyphs
-- 🌐 **Búsqueda en internet**: Verifica dominios contra reportes de fraude y quejas online
+- 🔎 **Análisis basado en evidencia**: No atribuye consultas externas que la extensión no haya realizado
 - 🎯 **Detección de ingeniería social**: Identifica urgencia artificial, amenazas y peticiones sospechosas
 - 📊 **Formato estructurado**: Veredicto, riesgo (0-100), hallazgos clave y recomendaciones
 - 🔧 **Personalizable**: Configura el prompt y el modelo según tus necesidades
 - 🔑 **Seguro**: Tu API key se almacena localmente en tu dispositivo
 - ⚡ **Streaming en tiempo real**: Ve el análisis aparecer palabra por palabra
-- 📊 **Múltiples modelos**: Soporta GPT-4o, GPT-4o Mini, GPT-4 Turbo y más
+- 📊 **Múltiples modelos**: Filtra modelos de texto compatibles y conserva la selección guardada
+- 🗔️ **Pestañas y ventanas**: Funciona con mensajes seleccionados, abiertos en pestañas o en ventanas independientes
+- ✍️ **Ventana de redacción**: Permite analizar o traducir un email mientras se está escribiendo
 
 ## Requisitos
 
@@ -65,8 +67,8 @@ Plugin de Thunderbird que utiliza ChatGPT para analizar emails y detectar spam, 
 3. Selecciona el **modelo** que deseas usar:
    - **GPT-4o**: Recomendado para análisis forense completo con búsqueda en internet
    - **GPT-4o Mini**: Más rápido y económico para análisis básicos
-   - **GPT-4 Turbo**: Análisis profundos
-   - **GPT-3.5 Turbo**: Opción más económica (menos preciso)
+   - **GPT-4.1**: Alternativa de alta calidad
+   - **GPT-4.1 Mini**: Alternativa rápida y económica
 
 4. El **prompt por defecto** incluye análisis profesional de:
    - Cabeceras forenses (SPF/DKIM/DMARC, Received, From/Reply-To)
@@ -74,7 +76,7 @@ Plugin de Thunderbird que utiliza ChatGPT para analizar emails y detectar spam, 
    - Auditoría completa de enlaces (acortadores, typosquatting, punycode)
    - Detección de homoglyphs (O/0, l/I, caracteres Unicode)
    - Patrones de ingeniería social
-   - Búsqueda en internet sobre el dominio remitente
+   - Evaluación del dominio basada en las evidencias presentes en el email
 
    Puedes personalizarlo según tus necesidades en la configuración.
 

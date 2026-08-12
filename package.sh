@@ -2,7 +2,13 @@
 # Script para empaquetar el plugin en formato XPI
 
 # Nombre del archivo de salida
-OUTPUT="email-spam-checker.xpi"
+VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' manifest.json)
+OUTPUT="email-spam-checker-v${VERSION}.xpi"
+
+if [ -z "$VERSION" ]; then
+    echo "✗ No se pudo obtener la versión de manifest.json"
+    exit 1
+fi
 
 # Eliminar el archivo anterior si existe
 if [ -f "$OUTPUT" ]; then
